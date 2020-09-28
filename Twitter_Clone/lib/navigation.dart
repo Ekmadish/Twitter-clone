@@ -19,7 +19,7 @@ class _NavigationPageState extends State<NavigationPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    Firebase.initializeApp();
+
     FirebaseAuth.instance.onAuthStateChanged.listen((userState) {
       if (userState != null) {
         setState(() {
@@ -37,7 +37,7 @@ class _NavigationPageState extends State<NavigationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
 // ignore: dead_code
-      body: isSigned == true ? Login() : HomePage(),
+      body: isSigned == false ? Login() : HomePage(),
     );
   }
 }
