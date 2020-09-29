@@ -5,13 +5,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_share/flutter_share.dart';
 
-class ProfilePage extends StatefulWidget {
+class ViewUser extends StatefulWidget {
+  final String uid;
+  ViewUser(this.uid);
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  _ViewUserState createState() => _ViewUserState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
-  String uid;
+class _ViewUserState extends State<ViewUser> {
+  String onlineuser;
   Stream userstream;
   String username;
   int following;
@@ -27,19 +29,20 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   getcurrentuserinfo() async {
+    print(widget.uid);
     var firebaseuser = await FirebaseAuth.instance.currentUser;
     DocumentSnapshot userdoc =
-        await userCollection.document(firebaseuser.uid).get();
+        await userCollection.document(widget.uid.trim()).get();
     var followersdocuments = await userCollection
-        .document(firebaseuser.uid)
+        .document(widget.uid)
         .collection('followers')
         .getDocuments();
     var followngdocuments = await userCollection
-        .document(firebaseuser.uid)
+        .document(widget.uid)
         .collection('following')
         .getDocuments();
     userCollection
-        .document(firebaseuser.uid)
+        .document(widget.uid)
         .collection('followers')
         .document(firebaseuser.uid)
         .get()
@@ -64,18 +67,61 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   getstream() async {
-    var firebaseuser = await FirebaseAuth.instance.currentUser;
     setState(() {
       userstream =
-          tweetColection.where('uid', isEqualTo: firebaseuser.uid).snapshots();
+          tweetColection.where('uid', isEqualTo: widget.uid.trim()).snapshots();
     });
   }
 
   getcurrentuseruid() async {
     var firebaseuser = await FirebaseAuth.instance.currentUser;
     setState(() {
-      uid = firebaseuser.uid;
+      onlineuser = firebaseuser.uid;
     });
+  }
+
+  followuser() async {
+    var document = await userCollection
+        .document(widget.uid)
+        .collection('followers')
+        .document(onlineuser)
+        .get();
+
+    if (!document.exists) {
+      userCollection
+          .document(widget.uid)
+          .collection('followers')
+          .document(onlineuser)
+          .setData({});
+
+      userCollection
+          .document(onlineuser)
+          .collection('following')
+          .document(widget.uid)
+          .setData({});
+      setState(() {
+        followers++;
+
+        isfollowing = true;
+      });
+    } else {
+      userCollection
+          .document(widget.uid)
+          .collection('followers')
+          .document(onlineuser)
+          .delete();
+
+      userCollection
+          .document(onlineuser)
+          .collection('following')
+          .document(widget.uid)
+          .delete();
+      setState(() {
+        followers--;
+
+        isfollowing = false;
+      });
+    }
   }
 
   likepost(String documentid) async {
@@ -95,8 +141,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   sharepost(String documentid, String tweet, String pic) async {
     FlutterShare.share(title: 'Flweetter', linkUrl: pic, text: tweet);
-
-    // Share.text('Flitter', tweet, 'text/plain');
+    // FlutterShare.Share.text('Flitter', tweet, 'text/plain');
     DocumentSnapshot document = await tweetColection.document(documentid).get();
     tweetColection
         .document(documentid)
@@ -179,7 +224,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             height: 20,
                           ),
                           InkWell(
-                            onTap: () {},
+                            onTap: () => followuser(),
                             child: Container(
                               width: MediaQuery.of(context).size.width / 2,
                               height: 50,
@@ -189,7 +234,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                       colors: [Colors.blue, Colors.lightBlue])),
                               child: Center(
                                 child: Text(
-                                  "Edit Profile",
+                                  isfollowing == false ? "Follow" : "Unfollow",
                                   style: mystyle(
                                       25, Colors.white, FontWeight.w700),
                                 ),
@@ -222,7 +267,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                           leading: CircleAvatar(
                                             backgroundColor: Colors.white,
                                             backgroundImage: NetworkImage(
-                                                tweetdoc.data()['profilepic']),
+                                                tweetdoc.data()['profilePic']),
                                           ),
                                           title: Text(
                                             tweetdoc.data()['username'],
@@ -307,7 +352,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                                                 .data()['id']),
                                                         child: tweetdoc
                                                                 .data()['likes']
-                                                                .contains(uid)
+                                                                .contains(
+                                                                    onlineuser)
                                                             ? Icon(
                                                                 Icons.favorite,
                                                                 color:
@@ -337,7 +383,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                                             tweetdoc.data()[
                                                                 'tweet'],
                                                             tweetdoc.data()[
-                                                                'image']),
+                                                                'profilePic']),
                                                         child:
                                                             Icon(Icons.share),
                                                       ),

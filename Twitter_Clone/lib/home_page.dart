@@ -1,9 +1,9 @@
-import 'package:Twitter_Clone/pages/profile_page.dart';
 import 'package:Twitter_Clone/pages/search_page.dart';
 import 'package:Twitter_Clone/pages/tweets_page.dart';
 import 'package:Twitter_Clone/utils/variables.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:Twitter_Clone/pages/profile_page.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({Key key}) : super(key: key);
@@ -20,7 +20,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   int page = 0;
-  List pageOptions = [Tweets(), Search(), Profile()];
+  List pageOptions = [Tweets(), Search(), ProfilePage()];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
