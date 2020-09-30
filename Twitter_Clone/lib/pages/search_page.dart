@@ -15,7 +15,6 @@ class _SearchState extends State<Search> {
   searchUser(String user) {
     var users =
         userCollection.where('username', isGreaterThanOrEqualTo: user).get();
-
     setState(() {
       searchedUser = users;
     });

@@ -13,7 +13,7 @@ class ViewUser extends StatefulWidget {
 }
 
 class _ViewUserState extends State<ViewUser> {
-  String onlineuser;
+  String onlineUseruid; //following, followers;
   Stream userstream;
   String username;
   int following;
@@ -21,6 +21,7 @@ class _ViewUserState extends State<ViewUser> {
   String profilepic;
   bool isfollowing;
   bool dataisthere = false;
+
   initState() {
     super.initState();
     getcurrentuseruid();
@@ -29,44 +30,41 @@ class _ViewUserState extends State<ViewUser> {
   }
 
   getcurrentuserinfo() async {
-    print(widget.uid);
     var firebaseuser = await FirebaseAuth.instance.currentUser;
     DocumentSnapshot userdoc =
         await userCollection.document(widget.uid.trim()).get();
-    var followersdocuments = await userCollection
-        .document(widget.uid)
-        .collection('followers')
-        .getDocuments();
-    var followngdocuments = await userCollection
-        .document(widget.uid)
-        .collection('following')
-        .getDocuments();
+    var folowersDoc =
+        await userCollection.doc(widget.uid).collection("followers").get();
+    var foloweingDoc =
+        await userCollection.doc(widget.uid).collection("following").get();
+
     userCollection
-        .document(widget.uid)
+        .doc(widget.uid)
         .collection('followers')
-        .document(firebaseuser.uid)
+        .doc(firebaseuser.uid)
         .get()
-        .then((document) {
-      if (document.exists) {
+        .then((doc) {
+      if (doc.exists) {
         setState(() {
           isfollowing = true;
         });
       } else {
-        setState(() {
-          isfollowing = false;
-        });
+        isfollowing = false;
       }
     });
+
     setState(() {
       username = userdoc.data()['username'];
-      following = followngdocuments.documents.length;
-      followers = followersdocuments.documents.length;
       profilepic = userdoc.data()['profilePic'];
       dataisthere = true;
+
+      followers = folowersDoc.docs.length;
+      following = foloweingDoc.docs.length;
     });
   }
 
   getstream() async {
+    // var firebaseuser = await FirebaseAuth.instance.currentUser;
     setState(() {
       userstream =
           tweetColection.where('uid', isEqualTo: widget.uid.trim()).snapshots();
@@ -76,45 +74,43 @@ class _ViewUserState extends State<ViewUser> {
   getcurrentuseruid() async {
     var firebaseuser = await FirebaseAuth.instance.currentUser;
     setState(() {
-      onlineuser = firebaseuser.uid;
+      onlineUseruid = firebaseuser.uid;
     });
   }
 
-  followuser() async {
-    var document = await userCollection
-        .document(widget.uid)
+  followUser() async {
+    var docUser = await userCollection
+        .doc(widget.uid)
         .collection('followers')
-        .document(onlineuser)
+        .doc(onlineUseruid)
         .get();
 
-    if (!document.exists) {
+    if (!docUser.exists) {
       userCollection
-          .document(widget.uid)
+          .doc(widget.uid)
           .collection('followers')
-          .document(onlineuser)
-          .setData({});
-
+          .doc(onlineUseruid)
+          .set({});
       userCollection
-          .document(onlineuser)
+          .doc(onlineUseruid)
           .collection('following')
-          .document(widget.uid)
-          .setData({});
-      setState(() {
+          .doc(widget.uid)
+          .set({});
+      setState(() { 
         followers++;
-
         isfollowing = true;
       });
     } else {
       userCollection
-          .document(widget.uid)
+          .doc(widget.uid)
           .collection('followers')
-          .document(onlineuser)
+          .doc(onlineUseruid)
           .delete();
 
       userCollection
-          .document(onlineuser)
+          .doc(onlineUseruid)
           .collection('following')
-          .document(widget.uid)
+          .doc(widget.uid)
           .delete();
       setState(() {
         followers--;
@@ -141,7 +137,8 @@ class _ViewUserState extends State<ViewUser> {
 
   sharepost(String documentid, String tweet, String pic) async {
     FlutterShare.share(title: 'Flweetter', linkUrl: pic, text: tweet);
-    // FlutterShare.Share.text('Flitter', tweet, 'text/plain');
+
+    // Share.text('Flitter', tweet, 'text/plain');
     DocumentSnapshot document = await tweetColection.document(documentid).get();
     tweetColection
         .document(documentid)
@@ -224,7 +221,7 @@ class _ViewUserState extends State<ViewUser> {
                             height: 20,
                           ),
                           InkWell(
-                            onTap: () => followuser(),
+                            onTap: () => followUser(),
                             child: Container(
                               width: MediaQuery.of(context).size.width / 2,
                               height: 50,
@@ -267,7 +264,7 @@ class _ViewUserState extends State<ViewUser> {
                                           leading: CircleAvatar(
                                             backgroundColor: Colors.white,
                                             backgroundImage: NetworkImage(
-                                                tweetdoc.data()['profilePic']),
+                                                tweetdoc.data()['profilepic']),
                                           ),
                                           title: Text(
                                             tweetdoc.data()['username'],
@@ -353,7 +350,7 @@ class _ViewUserState extends State<ViewUser> {
                                                         child: tweetdoc
                                                                 .data()['likes']
                                                                 .contains(
-                                                                    onlineuser)
+                                                                    onlineUseruid)
                                                             ? Icon(
                                                                 Icons.favorite,
                                                                 color:
@@ -383,7 +380,7 @@ class _ViewUserState extends State<ViewUser> {
                                                             tweetdoc.data()[
                                                                 'tweet'],
                                                             tweetdoc.data()[
-                                                                'profilePic']),
+                                                                'image']),
                                                         child:
                                                             Icon(Icons.share),
                                                       ),
